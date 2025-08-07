@@ -1,0 +1,32 @@
+[
+  {
+    "id": "language-java",
+    "category": "language",
+    "title": "The project uses Java 17"
+  },
+  {
+    "id": "framework-spring-boot",
+    "category": "framework",
+    "title": "Spring Boot is the application framework"
+  },
+  {
+    "id": "build-tool-gradle",
+    "category": "build_tool",
+    "title": "Gradle is used for dependency management and building the project"
+  },
+  {
+    "id": "cicd-github-actions",
+    "category": "cicd",
+    "title": "GitHub Actions is used for continuous integration"
+  },
+  {
+    "id": "testing-junit5",
+    "category": "testing",
+    "title": "JUnit 5 is the testing framework"
+  },
+  {
+    "id": "third-party-actuator",
+    "category": "third_party",
+    "title": "Spring Boot Actuator is used for monitoring"
+  }
+]

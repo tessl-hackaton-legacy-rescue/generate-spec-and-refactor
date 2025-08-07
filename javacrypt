@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import sys
+import os
+
+def run_analyze(args):
+    """Calls the spec.py script."""
+    print("--- Running 'analyze' command ---")
+    # Use sys.executable to ensure we use the same python interpreter
+    command = [sys.executable, "spec.py", args.repository_path]
+    subprocess.run(command, check=True)
+
+def run_compare(args):
+    """Calls the compare.py script."""
+    print("--- Running 'compare' command ---")
+    command = [sys.executable, "compare.py", args.repository_base_path, args.rules_path]
+    if args.reports_path:
+        command.extend(['--reports_path', args.reports_path])
+    subprocess.run(command, check=True)
+
+def run_rewrite(args):
+    """Calls the rewrite.py script."""
+    print("--- Running 'rewrite' command ---")
+    command = [sys.executable, "rewrite.py", args.repository_path, args.rules_path]
+    subprocess.run(command, check=True)
+
+def main():
+    """
+    Main entry point for the orchestrator script.
+    """
+    # Get the directory where the orchestrator script is located to ensure other scripts are found
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
+
+    parser = argparse.ArgumentParser(
+        description="A master script to orchestrate code specification, comparison, and rewriting.",
+        formatter_class=argparse.RawTextHelpFormatter # Allows for better formatting in help text
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
+
+    # --- 'analyze' command ---
+    parser_analyze = subparsers.add_parser(
+        "analyze",
+        help="Analyze a repository to generate a rules.json file.",
+        description="Runs spec.py to analyze a single Git repository and generate a 'rules.json' file in the current directory."
+    )
+    parser_analyze.add_argument("repository_path", help="Absolute path to the Git repository to analyze.")
+    parser_analyze.set_defaults(func=run_analyze)
+
+    # --- 'compare' command ---
+    parser_compare = subparsers.add_parser(
+        "compare",
+        help="Compare repositories against rules and generate an HTML report.",
+        description="Runs compare.py to evaluate multiple repositories against a rules.json file, generating individual JSON reports and a summary index.html."
+    )
+    parser_compare.add_argument("repository_base_path", help="Absolute path to the directory containing multiple Git repositories.")
+    parser_compare.add_argument("rules_path", help="Path to the rules.json file.")
+    parser_compare.add_argument("--reports_path", default="reports", help="Directory to save all reports (JSON and HTML). Default: 'reports'.")
+    parser_compare.set_defaults(func=run_compare)
+
+    # --- 'rewrite' command ---
+    parser_rewrite = subparsers.add_parser(
+        "rewrite",
+        help="Rewrite a repository based on a rules file.",
+        description="Runs rewrite.py to automatically rewrite a repository's code based on a given rules file using 'gemini -p -y'."
+    )
+    parser_rewrite.add_argument("repository_path", help="Absolute path to the Git repository to rewrite.")
+    parser_rewrite.add_argument("rules_path", help="Path to the rules file to apply.")
+    parser_rewrite.set_defaults(func=run_rewrite)
+
+    args = parser.parse_args()
+    try:
+        # Execute the function associated with the chosen sub-command
+        args.func(args)
+        print(f"\n--- Command '{args.command}' completed successfully. ---")
+    except subprocess.CalledProcessError as e:
+        print(f"\n--- Error: Command '{args.command}' failed with exit code {e.returncode}. ---", file=sys.stderr)
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\n--- Error: A script file could not be found: {e.filename}. ---", file=sys.stderr)
+        print("Please ensure spec.py, compare.py, and rewrite.py are in the same directory as the orchestrator.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n--- An unexpected error occurred: {e} ---", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
